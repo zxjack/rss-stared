@@ -92,3 +92,4 @@ func main() {
 		}
 		fmt.Printf("Created file: %s\n", fileName)
 	}
+}
