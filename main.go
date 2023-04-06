@@ -30,7 +30,7 @@ type Link struct {
 
 func main() {
 	// Get GitHub token from environment variable
-	token := os.Getenv("GITHUB_TOKEN")
+	token := os.Getenv("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")
 	if token == "" {
 		log.Fatal("GITHUB_TOKEN environment variable is not set")
 	}
