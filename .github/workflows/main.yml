@@ -19,6 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Download missing dependencies
+        run: go mod download cloud.google.com/go/compute/metadata@v0.2.0
+
       - name: Fetch articles
         run: go run main.go
         env:
