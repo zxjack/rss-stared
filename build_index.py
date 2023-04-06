@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from pathlib import Path
 
 # Load all HTML files in the repository
 html_files = []
