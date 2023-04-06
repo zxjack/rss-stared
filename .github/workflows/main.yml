@@ -39,7 +39,7 @@ jobs:
         run: |
           git config --global user.name "zxjack"
           git config --global user.email "zxjack@gmail.com"
-          git add rss-stared/*
+          git add .
           git commit -m "Update RSS articles"
         
       - name: Push Changes
