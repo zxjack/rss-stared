@@ -70,12 +70,14 @@ func main() {
 		fileName := strings.ReplaceAll(entry.Title, " ", "_") + ".html"
 		fileContent := fmt.Sprintf(defaultContent, entry.Title, entry.Content)
 
-		// Check if file already exists in the repository
-		filePath := fileName
-		file, _, _, err := client.Repositories.GetContents(ctx, repoOwner, repoName, filePath, nil)
+		// Check if the file already exists in the repository
+		// Use the file's SHA to determine if it's a duplicate
+		contents, _, _, err := client.Repositories.GetContents(ctx, repoOwner, repoName, fileName, &github.RepositoryContentGetOptions{})
 		if err == nil {
-			fmt.Printf("File already exists: %s\n", filePath)
-			continue
+			if contents != nil && contents.SHA != nil {
+				fmt.Printf("File already exists: %s (SHA: %s)\n", fileName, *contents.SHA)
+				continue
+			}
 		}
 
 		// Create a new file in the GitHub repository
@@ -90,4 +92,3 @@ func main() {
 		}
 		fmt.Printf("Created file: %s\n", fileName)
 	}
-}
