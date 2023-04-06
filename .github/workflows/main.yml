@@ -3,27 +3,23 @@ name: RSS Stared
 on:
   schedule:
     - cron: '0 * * * *'
-  push: # 将 push 事件添加到 on 列表中
-    branches: [main] 
+  push:
+    branches: [main]
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
-
     steps:
       - name: Fetch RSS articles
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
-
       - name: Checkout repository
         uses: actions/checkout@v2
-
       - name: Download missing dependencies
-        run: go mod download cloud.google.com/go/compute/metadata@v0.2.0
-        - run: go mod download golang.org/x/crypto@latest
-      
-
+        run: |
+          go mod download cloud.google.com/go/compute/metadata@v0.2.0
+          go mod download golang.org/x/crypto@latest
       - name: Fetch articles
         run: go run main.go
         env:
