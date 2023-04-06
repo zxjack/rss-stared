@@ -1,26 +1,39 @@
-name: RSS Stared
+name: Generate HTML files for RSS items
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  push:
-    branches: [main]
+    - cron: "0 0 * * *"
 
 jobs:
-  fetch:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Fetch RSS articles
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download missing dependencies
+
+      - name: Install dependencies
         run: |
-          go mod download cloud.google.com/go/compute/metadata@v0.2.0
-          go mod download golang.org/x/crypto@latest
-      - name: Fetch articles
-        run: go run main.go
+          go get -v -t -d ./...
+
+      - name: Build
+        run: |
+          go build .
+
+      - name: Run
+        run: |
+          ./main
         env:
-          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      - name: Add to Git and push
+        run: |
+          git config --global user.email "zxjack@gmail.com"
+          git config --global user.name "zxjack"
+          git add .
+          git commit -m "Added new html files"
+          git push origin main
