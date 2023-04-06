@@ -2,114 +2,92 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v37/github"
 	"golang.org/x/oauth2"
 )
 
-type Item struct {
-	XMLName     xml.Name `xml:"item"`
-	Title       string   `xml:"title"`
-	Link        string   `xml:"link"`
-	Description string   `xml:"description"`
-}
-
-type Channel struct {
-	XMLName     xml.Name `xml:"channel"`
-	Title       string   `xml:"title"`
-	Link        string   `xml:"link"`
-	Description string   `xml:"description"`
-	Items       []Item   `xml:"item"`
-}
-
-type RSS struct {
-	XMLName xml.Name `xml:"rss"`
-	Channel Channel  `xml:"channel"`
-}
-
-type AtomEntry struct {
-	Title   string `json:"title"`
-	Link    string `json:"html_url"`
-	Content string `json:"body"`
-}
+const (
+	baseURL        = "https://r.ifyes.online:6443"
+	feedPath       = "/public.php?op=rss&id=-1&is_cat=0&q=&key=xt9z0r6325e20d77277"
+	repoOwner      = "zxjack"
+	repoName       = "rss-stared"
+	defaultContent = `<!doctype html><html><head><meta charset="utf-8"><title>%s</title></head><body>%s</body></html>`
+)
 
 type AtomFeed struct {
-	Title string       `json:"title"`
-	Link  AtomLink     `json:"link"`
-	Items []AtomEntry `json:"items"`
-}
-
-type AtomLink struct {
-	Href string `json:"href"`
+	XMLName xml.Name `xml:"http://www.w3.org/2005/Atom feed"`
+	Title   string   `xml:"title"`
+	Entries []struct {
+		Title   string `xml:"title"`
+		Content string `xml:"content"`
+	} `xml:"entry"`
 }
 
 func main() {
-	// Get starred repos from GitHub API
+	// Create a GitHub client using a personal access token
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		log.Fatal("GitHub token not found in environment variables")
+	}
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
-	// Retrieve Atom feed
-	opt := &github.ListOptions{PerPage: 100}
-	var allEntries []AtomEntry
-	for {
-		repos, resp, err := client.Activity.ListStarred(ctx, "", opt)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, repo := range repos {
-			owner := repo.GetOwner().GetLogin()
-			name := repo.GetName()
-			entries, _, err := client.Repositories.ListCommits(ctx, owner, name, nil)
-			if err != nil {
-				log.Fatal(err)
-			}
-			for _, entry := range entries {
-				entryURL := entry.GetHTMLURL()
-				sha := entry.GetSHA()
-				commit, _, err := client.Git.GetCommit(ctx, owner, name, sha)
-				if err != nil {
-					log.Fatal(err)
-				}
-				message := commit.GetMessage()
-				if strings.Contains(message, "rss") {
-					content := commit.Files[0].GetContent()
-					if strings.Contains(content, "<rss") {
-						var rss RSS
-						xml.Unmarshal([]byte(content), &rss)
-						for _, item := range rss.Channel.Items {
-							allEntries = append(allEntries, AtomEntry{
-								Title:   item.Title,
-								Link:    item.Link,
-								Content: item.Description,
-							})
-						}
-					} else if strings.Contains(content, "<feed xmlns") {
-						var atomFeed AtomFeed
-						xml.Unmarshal([]byte(content), &atomFeed)
-						allEntries = append(allEntries, atomFeed.Items...)
-					}
-				}
-			}
-		}
-		if resp.NextPage == 0 {
-			break
-		}
-		opt.Page = resp.NextPage
+	// Get the Atom feed from the source URL
+	resp, err := http.Get(baseURL + feedPath)
+	if err != nil {
+		log.Fatalf("Failed to fetch feed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response body: %v", err)
 	}
 
-	// Generate HTML file from Atom feed
-	html := "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>Starred RSS Articles</title>\n</head>\n<body>\n"
-	for _, entry := range allEntries {
-		html += fmt.Sprintf("<h2><a href=\"%s\">
+	// Parse the Atom feed XML
+	var atomFeed AtomFeed
+	err = xml.Unmarshal(body, &atomFeed)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal Atom feed XML: %v", err)
+	}
+
+	// Iterate over the feed entries and create HTML files for each one
+	for _, entry := range atomFeed.Entries {
+		// Clean up the title and use it as the file name
+		fileName := strings.ReplaceAll(entry.Title, " ", "_") + ".html"
+		fileContent := fmt.Sprintf(defaultContent, entry.Title, entry.Content)
+
+		// Check if file already exists in the repository
+		filePath := fileName
+		file, _, _, err := client.Repositories.GetContents(ctx, repoOwner, repoName, filePath, nil)
+		if err == nil {
+			fmt.Printf("File already exists: %s\n", filePath)
+			continue
+		}
+
+		// Create a new file in the GitHub repository
+		fileOpts := &github.RepositoryContentFileOptions{
+			Message: github.String("Add new file: " + fileName),
+			Content: []byte(fileContent),
+			Branch:  github.String("main"),
+		}
+		_, _, err = client.Repositories.CreateFile(ctx, repoOwner, repoName, fileName, fileOpts)
+		if err != nil {
+			log.Fatalf("Failed to create file: %v", err)
+		}
+		fmt.Printf("Created file: %s\n", fileName)
+	}
+}
