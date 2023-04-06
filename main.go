@@ -6,42 +6,36 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
 
-// RSS 代表 XML 中的 <rss> 标签
-type RSS struct {
-	XMLName xml.Name `xml:"rss"`
-	Channel Channel  `xml:"channel"`
+type Feed struct {
+	XMLName xml.Name `xml:"feed"`
+	Entries []Entry  `xml:"entry"`
 }
 
-// Channel 代表 XML 中的 <channel> 标签
-type Channel struct {
-	Title       string `xml:"title"`
-	Description string `xml:"description"`
-	Link        string `xml:"link"`
-	Items       []Item `xml:"item"`
+type Entry struct {
+	Title   string `xml:"title"`
+	Link    Link   `xml:"link"`
+	Content string `xml:"content"`
 }
 
-// Item 代表 XML 中的 <item> 标签
-type Item struct {
-	Title   string    `xml:"title"`
-	Link    string    `xml:"link"`
-	PubDate time.Time `xml:"pubDate"`
+type Link struct {
+	Href string `xml:"href,attr"`
 }
 
 func main() {
-	// 设置 GitHub API 的 token 和 owner/repo
+	// Get GitHub token from environment variable
 	token := os.Getenv("GITHUB_TOKEN")
-	ownerRepo := strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")
+	if token == "" {
+		log.Fatal("GITHUB_TOKEN environment variable is not set")
+	}
 
-	// 创建 GitHub 客户端
+	// Authenticate with GitHub API
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -49,40 +43,67 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
-	// 抓取 RSS 内容
-	resp, err := http.Get("https://r.ifyes.online:6443/public.php?op=rss&id=-1&is_cat=0&q=&key=xt9z0r6325e20d77277")
+	// Get RSS feed
+	resp, err := client.Get(context.Background(), "https://r.ifyes.online:6443/public.php?op=rss&id=-1&is_cat=0&q=&key=xt9z0r6325e20d77277", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
-	// 解析 RSS 内容
-	rssBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var rss RSS
-	err = xml.Unmarshal(rssBytes, &rss)
+	// Read response body
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 创建文件
-	for _, item := range rss.Channel.Items {
-		// 文件名以 title 命名
-		filename := fmt.Sprintf("%s.html", item.Title)
-		fileContent := fmt.Sprintf("<html><head><title>%s</title></head><body><h1>%s</h1><p><a href=\"%s\">%s</a></p></body></html>", item.Title, item.Title, item.Link, item.Link)
+	// Parse RSS feed
+	var feed Feed
+	err = xml.Unmarshal(body, &feed)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// 创建文件并保存到 GitHub 仓库
-		opt := &github.RepositoryContentFileOptions{
-			Message: github.String(fmt.Sprintf("Add file %s", filename)),
-			Content: []byte(fileContent),
+	// Loop through entries and create HTML file for each one
+	for _, entry := range feed.Entries {
+		title := entry.Title
+		content := entry.Content
+
+		// Remove invalid characters from title for file name
+		title = strings.ReplaceAll(title, " ", "-")
+		title = strings.ReplaceAll(title, "/", "-")
+		title = strings.ReplaceAll(title, "\\", "-")
+		title = strings.ReplaceAll(title, ":", "-")
+		title = strings.ReplaceAll(title, "*", "-")
+		title = strings.ReplaceAll(title, "?", "-")
+		title = strings.ReplaceAll(title, "\"", "-")
+		title = strings.ReplaceAll(title, "<", "-")
+		title = strings.ReplaceAll(title, ">", "-")
+		title = strings.ReplaceAll(title, "|", "-")
+
+		// Create HTML file
+		fileName := title + ".html"
+		file, err := os.Create(fileName)
+		if err != nil {
+			log.Fatal(err)
 		}
-		_, _, err = client.Repositories.CreateFile(ctx, ownerRepo[0], ownerRepo[1], fmt.Sprintf("rss-stared/%s", filename), opt)
+		defer file.Close()
+
+		// Write content to file
+		_, err = file.WriteString(content)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Printf("Created file %s\n", filename)
+		// Commit file to GitHub repository
+		commitMessage := "Add " + fileName
+		opts := &github.RepositoryContentFileOptions{
+			Message: &commitMessage,
+			Content: []byte(content),
+		}
+		_, _, err = client.Repositories.CreateFile(ctx, "zxjack", "rss-stared", fileName, opts)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Created %s\n", fileName)
 	}
 }
