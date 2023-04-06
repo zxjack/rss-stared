@@ -28,8 +28,7 @@ jobs:
         run: |
           go build .
 
-      - name: Add execute permission to main
-        run: chmod +x ./main    
+      
 
       - name: Run
         run: |
