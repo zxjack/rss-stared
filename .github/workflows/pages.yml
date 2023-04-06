@@ -30,3 +30,8 @@ jobs:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
           publish_dir: .
           publish_branch: gh-pages
+env:
+  GIT_AUTHOR_NAME: zxjack
+  GIT_AUTHOR_EMAIL: zxjack@gmail.com
+  GIT_COMMITTER_NAME: zxjack
+  GIT_COMMITTER_EMAIL: zxjack@gmail.com
