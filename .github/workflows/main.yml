@@ -3,6 +3,8 @@ name: RSS Stared
 on:
   schedule:
     - cron: '0 * * * *'
+  push: # 将 push 事件添加到 on 列表中
+    branches: [main] 
 
 jobs:
   fetch:
