@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"unicode"
 
 	"github.com/google/go-github/v37/github"
 	"golang.org/x/oauth2"
@@ -67,7 +68,16 @@ func main() {
 	// Iterate over the feed entries and create HTML files for each one
 	for _, entry := range atomFeed.Entries {
 		// Clean up the title and use it as the file name
-		fileName := strings.ReplaceAll(entry.Title, " ", "_") + ".html"
+		// fileName := strings.ReplaceAll(entry.Title, " ", "_") + ".html"
+		// Clean up the title and use it as the file name
+		cleanedTitle := strings.Map(func(r rune) rune {
+			if unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-' || r == '_' {
+				return r
+			}
+			return '_'
+		}, entry.Title)
+
+		fileName := cleanedTitle + ".html"
 		fileContent := fmt.Sprintf(defaultContent, entry.Title, entry.Content)
 
 		// Check if the file already exists in the repository
