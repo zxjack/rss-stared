@@ -35,18 +35,7 @@ jobs:
         run: |
           ./main
 
-      - name: Commit Changes
-        run: |
-          git config --global user.name "zxjack"
-          git config --global user.email "zxjack@gmail.com"
-          git add .
-          git commit -m "Update RSS articles"
-        
-      - name: Push Changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: master
-          github_token: ${{ secrets.MY_GITHUB_TOKEN }}    
+      
 
 env:
   GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}        
