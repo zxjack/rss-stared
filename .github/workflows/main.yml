@@ -34,12 +34,17 @@ jobs:
       - name: Run
         run: |
           ./main
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-      - name: Add to Git and push
+
+      - name: Commit Changes
         run: |
-          git config --global user.email "zxjack@gmail.com"
           git config --global user.name "zxjack"
-          git add .
-          git commit -m "Added new html files"
-          git push origin main
+          git config --global user.email "zxjack@gmail.com"
+          git add rss-stared/*
+          git commit -m "Update RSS articles"
+        
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: master
+          github_token: ${{ secrets.MY_GITHUB_TOKEN }}    
+        
