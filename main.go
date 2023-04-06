@@ -6,36 +6,37 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v37/github"
 	"golang.org/x/oauth2"
 )
 
-type Feed struct {
-	XMLName xml.Name `xml:"feed"`
-	Entries []Entry  `xml:"entry"`
-}
+const (
+	baseURL        = "https://r.ifyes.online:6443"
+	feedPath       = "/public.php?op=rss&id=-1&is_cat=0&q=&key=xt9z0r6325e20d77277"
+	repoOwner      = "zxjack"
+	repoName       = "rss-stared"
+	defaultContent = `<!doctype html><html><head><meta charset="utf-8"><title>%s</title></head><body>%s</body></html>`
+)
 
-type Entry struct {
-	Title   string `xml:"title"`
-	Link    Link   `xml:"link"`
-	Content string `xml:"content"`
-}
-
-type Link struct {
-	Href string `xml:"href,attr"`
+type AtomFeed struct {
+	XMLName xml.Name `xml:"http://www.w3.org/2005/Atom feed"`
+	Title   string   `xml:"title"`
+	Entries []struct {
+		Title   string `xml:"title"`
+		Content string `xml:"content"`
+	} `xml:"entry"`
 }
 
 func main() {
-	// Get GitHub token from environment variable
-	token := os.Getenv("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")
+	// Create a GitHub client using a personal access token
+	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
-		log.Fatal("GITHUB_TOKEN environment variable is not set")
+		log.Fatal("GitHub token not found in environment variables")
 	}
-
-	// Authenticate with GitHub API
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -43,67 +44,42 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
-	// Get RSS feed
-	resp, err := client.Get(context.Background(), "https://r.ifyes.online:6443/public.php?op=rss&id=-1&is_cat=0&q=&key=xt9z0r6325e20d77277", nil)
+	// Get the Atom feed from the source URL
+	resp, err := http.Get(baseURL + feedPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to fetch feed: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response body
+	// Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to read response body: %v", err)
 	}
 
-	// Parse RSS feed
-	var feed Feed
-	err = xml.Unmarshal(body, &feed)
+	// Parse the Atom feed XML
+	var atomFeed AtomFeed
+	err = xml.Unmarshal(body, &atomFeed)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to unmarshal Atom feed XML: %v", err)
 	}
 
-	// Loop through entries and create HTML file for each one
-	for _, entry := range feed.Entries {
-		title := entry.Title
-		content := entry.Content
+	// Iterate over the feed entries and create HTML files for each one
+	for _, entry := range atomFeed.Entries {
+		// Clean up the title and use it as the file name
+		fileName := strings.ReplaceAll(entry.Title, " ", "_") + ".html"
+		fileContent := fmt.Sprintf(defaultContent, entry.Title, entry.Content)
 
-		// Remove invalid characters from title for file name
-		title = strings.ReplaceAll(title, " ", "-")
-		title = strings.ReplaceAll(title, "/", "-")
-		title = strings.ReplaceAll(title, "\\", "-")
-		title = strings.ReplaceAll(title, ":", "-")
-		title = strings.ReplaceAll(title, "*", "-")
-		title = strings.ReplaceAll(title, "?", "-")
-		title = strings.ReplaceAll(title, "\"", "-")
-		title = strings.ReplaceAll(title, "<", "-")
-		title = strings.ReplaceAll(title, ">", "-")
-		title = strings.ReplaceAll(title, "|", "-")
-
-		// Create HTML file
-		fileName := title + ".html"
-		file, err := os.Create(fileName)
+		// Create a new file in the GitHub repository
+		fileOpts := &github.RepositoryContentFileOptions{
+			Message: github.String("Add new file: " + fileName),
+			Content: []byte(fileContent),
+			Branch:  github.String("main"),
+		}
+		_, _, err = client.Repositories.CreateFile(ctx, repoOwner, repoName, fileName, fileOpts)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to create file: %v", err)
 		}
-		defer file.Close()
-
-		// Write content to file
-		_, err = file.WriteString(content)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Commit file to GitHub repository
-		commitMessage := "Add " + fileName
-		opts := &github.RepositoryContentFileOptions{
-			Message: &commitMessage,
-			Content: []byte(content),
-		}
-		_, _, err = client.Repositories.CreateFile(ctx, "zxjack", "rss-stared", fileName, opts)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("Created %s\n", fileName)
+		fmt.Printf("Created file: %s\n", fileName)
 	}
 }
