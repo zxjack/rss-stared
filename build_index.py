@@ -38,6 +38,16 @@ for f in html_files:
 # 创建index.html文件
 with open('index.html', 'w') as index_file:
     index_file.write(f'<html><body>{link_list}</body></html>')
+    
+# 读取环境变量
+author_name = os.getenv('GIT_AUTHOR_NAME')
+author_email = os.getenv('GIT_AUTHOR_EMAIL')
+committer_name = os.getenv('GIT_COMMITTER_NAME')
+committer_email = os.getenv('GIT_COMMITTER_EMAIL')    
+
+# 设置用户名和电子邮件
+Repo().config_writer().set_value('user', 'name', author_name).release()
+Repo().config_writer().set_value('user', 'email', author_email).release()
 
 # 提交并推送到代码库
 repo.git.add("index.html")
