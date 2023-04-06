@@ -21,6 +21,8 @@ jobs:
 
       - name: Download missing dependencies
         run: go mod download cloud.google.com/go/compute/metadata@v0.2.0
+        run: go mod download golang.org/x/crypto
+
 
       - name: Fetch articles
         run: go run main.go
