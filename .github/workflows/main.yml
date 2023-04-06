@@ -30,7 +30,7 @@ jobs:
 
       - name: Run
         run: |
-          ./main.go
+          ./main
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
       - name: Add to Git and push
