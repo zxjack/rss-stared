@@ -90,7 +90,7 @@ func main() {
 	}
 
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+		&oauth2.Token{AccessToken: os.Getenv("MY_GITHUB_TOKEN")},
 	)
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
