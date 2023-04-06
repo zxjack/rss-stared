@@ -47,4 +47,7 @@ jobs:
         with:
           branch: master
           github_token: ${{ secrets.MY_GITHUB_TOKEN }}    
+
+env:
+  GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}        
         
