@@ -35,4 +35,4 @@ jobs:
 
 env:
   GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true
+
