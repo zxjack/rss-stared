@@ -25,7 +25,7 @@ jobs:
       - name: Fix oauth2.go build issue
         run: |
          go mod download golang.org/x/oauth2
-         cd src/golang.org/x/oauth2
+         cd $GOPATH/pkg/mod/golang.org/x/oauth2@v0.0.0-20210819172956-2ccce9b4a323
          sed -i '1s/^/\/\/ +build !js\n\n/' oauth2.go
 
       - name: Build
