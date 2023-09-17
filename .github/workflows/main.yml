@@ -24,7 +24,7 @@ jobs:
 
       - name: Fix oauth2.go build issue
         run: |
-          cd $GOPATH/src/golang.org/x/oauth2
+          cd src/golang.org/x/oauth2
           sed -i '1s/^/\/\/ +build !js\n\n/' oauth2.go
 
       - name: Build
