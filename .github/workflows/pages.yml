@@ -20,6 +20,9 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install -r requirements.txt
 
+      - name: Install @octokit/rest
+        run: npm install @octokit/rest
+
       - name: Build index.html
         run: |
           python3 build_index.py
