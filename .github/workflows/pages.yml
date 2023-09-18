@@ -25,12 +25,13 @@ jobs:
           python3 build_index.py
 
       - name: Get article publish time
-        uses: actions/github-script@v3
+        uses: actions/github-script@v5
         with:
           script: |
-            const article = await github.getArtifact('article');
+            const article = await github.actions.getArtifact('article');
             const publishTime = article.published_at;
-          result-format: json
+            console.log(publishTime);
+          result-format: string
 
       - name: Update index.html
         run: |
