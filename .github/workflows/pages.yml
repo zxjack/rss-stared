@@ -22,7 +22,7 @@ jobs:
       
       - name: Build index.html
         run: |
-          python3 build_index.py
+          python3 build_index.py --sort-by-time
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
