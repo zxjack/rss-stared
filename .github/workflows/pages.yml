@@ -19,37 +19,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install -r requirements.txt
-
-      - name: Install @octokit/rest
-        run: npm install @octokit/rest
-
+      
       - name: Build index.html
         run: |
           python3 build_index.py
-
-      - name: Get article publish time
-        uses: actions/github-script@v5
-        with:
-          script: |
-            const { Octokit } = require('@octokit/rest');
-            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-
-            const articleArtifact = await octokit.rest.actions.artifacts.getArtifact({
-              owner: 'zxjack',
-              repo: 'my-repository',
-              artifact_id: 'article'
-            });
-
-            const publishTime = articleArtifact.published_at;
-            console.log(publishTime);
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          debug: false
-          user-agent: actions/github-script
-          result-encoding: string
-
-      - name: Update index.html
-        run: |
-          sed -i "s/<time>.*<\/time>/<time>$publishTime<\/time>/g" index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
