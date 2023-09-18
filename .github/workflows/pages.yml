@@ -24,6 +24,18 @@ jobs:
         run: |
           python3 build_index.py
 
+      - name: Get article publish time
+        uses: actions/github-script@v3
+        with:
+          script: |
+            const article = await github.getArtifact('article');
+            const publishTime = article.published_at;
+          result-format: json
+
+      - name: Update index.html
+        run: |
+          sed -i "s/<time>.*<\/time>/<time>$publishTime<\/time>/g" index.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
