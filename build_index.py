@@ -1,4 +1,5 @@
 import os
+import datetime
 from bs4 import BeautifulSoup
 
 # 指定目录和扩展名
@@ -12,6 +13,12 @@ files = [f for f in os.listdir(directory) if f.endswith(extension)]
 with open('index.html', 'w') as f:
     # 写入HTML头部
     f.write('<html><body>')
+    # 获取文件的修改时间
+    for file in files:
+        mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file))
+        
+        # 按照修改时间对文件进行排序
+        files.sort(key=lambda file: mtime)
     
     # 遍历html文件
     for file in files:
