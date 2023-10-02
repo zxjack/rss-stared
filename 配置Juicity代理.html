@@ -1,0 +1,187 @@
+<!doctype html><html><head><meta charset="utf-8"><title>配置Juicity代理</title></head><body><p>Juicity&#26159;&#19968;&#20010;&#22522;&#20110;quic&#30340;&#20195;&#29702;&#21327;&#35758;&#65292;&#26356;&#22810;&#20171;&#32461;&#21487;&#31227;&#27493;&#39033;&#30446;&#22320;&#22336;&#26597;&#30475;&#65306;https://github.com/juicity/juicity</p>
+<p>&#31995;&#32479;&#25105;&#20351;&#29992;&#30340;Debian12&#65292;&#23433;&#35013;&#38656;&#35201;&#29992;&#21040;&#30340;&#36719;&#20214;&#21253;&#65306;</p>
+<pre>apt -y update
+apt -y install wget unzip uuid-runtime nginx python3-certbot-nginx</pre>
+<p>&#19979;&#36733;&#23545;&#24212;&#26550;&#26500;&#30340;&#21387;&#32553;&#21253;&#65292;&#36825;&#37324;&#25105;&#26159;arm64&#65306;</p>
+<pre>wget https://github.com/juicity/juicity/releases/download/v0.3.0/juicity-linux-arm64.zip
+unzip juicity-linux-arm64.zip -d juicity
+cd juicity</pre>
+<p>&#25226;juicity-server&#22797;&#21046;&#21040;/usr/local/bin&#65306;</p>
+<pre>cp juicity-server /usr/local/bin</pre>
+<p>&#26032;&#24314;&#19968;&#20010;&#30446;&#24405;&#29992;&#20110;&#23384;&#25918;juicity&#30340;&#37197;&#32622;&#25991;&#20214;&#65306;</p>
+<pre>mkdir /etc/juicity</pre>
+<p>&#26032;&#24314;juicity&#30340;&#37197;&#32622;&#25991;&#20214;&#65306;</p>
+<pre>nano /etc/juicity/server.json</pre>
+<p>&#20889;&#20837;&#22914;&#19979;&#37197;&#32622;&#65306;</p>
+<pre>{
+    "listen": ":23182",
+    "users": {
+        "5075556a-13df-4d6a-aa14-4747040bb7e5": "password"
+    },
+    "certificate": "/etc/letsencrypt/live/juicity.example.com/fullchain.pem",
+    "private_key": "/etc/letsencrypt/live/juicity.example.com/privkey.pem",
+    "congestion_control": "bbr",
+    "disable_outbound_udp443": true,
+    "log_level": "info"
+}</pre>
+<p>&#20854;&#20013;UUID&#21487;&#20351;&#29992;&#22914;&#19979;&#21629;&#20196;&#29983;&#25104;&#65306;</p>
+<pre>uuidgen</pre>
+<p>&#26032;&#24314;systemd&#26381;&#21153;&#65306;</p>
+<pre>nano /etc/systemd/system/juicity-server.service</pre>
+<p>&#20889;&#20837;&#22914;&#19979;&#37197;&#32622;&#65306;</p>
+<pre>[Unit]
+Description=juicity-server Service
+Documentation=https://github.com/juicity/juicity
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/juicity-server run -c /etc/juicity/server.json --disable-timestamp
+Restart=on-failure
+LimitNPROC=512
+LimitNOFILE=infinity
+
+[Install]
+WantedBy=multi-user.target</pre>
+<p>&#35774;&#32622;&#24320;&#26426;&#33258;&#21551;&#65306;</p>
+<pre>systemctl enable juicity-server.service</pre>
+<p>&#25509;&#19979;&#26469;&#38656;&#35201;&#30003;&#35831;&#19968;&#20010;SSL&#35777;&#20070;&#65292;&#36825;&#37324;&#25105;&#29992;Certbot&#21644;NGINX&#26469;&#23436;&#25104;&#12290;</p>
+<p>&#26032;&#24314;&#19968;&#20010;NGINX&#31449;&#28857;&#37197;&#32622;&#25991;&#20214;&#65306;</p>
+<pre>nano /etc/nginx/sites-available/juicity</pre>
+<p>&#20889;&#20837;&#22914;&#19979;&#37197;&#32622;&#65306;</p>
+<pre>server {
+    listen 80;
+    server_name juicity.example.com; // &#20462;&#25913;&#25104;&#20320;&#30340;&#22495;&#21517;
+}</pre>
+<p>&#21551;&#29992;&#31449;&#28857;&#65306;</p>
+<pre>ln -s /etc/nginx/sites-available/juicity /etc/nginx/sites-enabled/juicity</pre>
+<p>&#31614;&#21457;SSL&#35777;&#20070;&#65306;</p>
+<pre>certbot --nginx</pre>
+<p>&#20877;&#27425;&#32534;&#36753;juicity&#30340;&#37197;&#32622;&#25991;&#20214;&#65306;</p>
+<pre>nano /etc/juicity/server.json</pre>
+<p>&#23558;&#35777;&#20070;&#21644;&#31169;&#38053;&#36335;&#24452;&#20462;&#25913;&#25104;&#21018;&#30003;&#35831;&#30340;&#65306;</p>
+<pre>{
+...
+    "certificate": "/etc/letsencrypt/live/juicity.example.com/fullchain.pem",
+    "private_key": "/etc/letsencrypt/live/juicity.example.com/privkey.pem",
+...
+}</pre>
+<p>&#21551;&#21160;juicity&#26381;&#21153;&#65306;</p>
+<pre>systemctl start juicity-server.service</pre>
+<p>&#30830;&#20445;juicity&#26381;&#21153;&#27491;&#24120;&#36816;&#34892;&#65306;</p>
+<p><a href="https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34.png" title="" rel="noopener noreferrer" target="_blank"><img src="https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34.png" alt="" srcset="https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34.png 1007w,https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34-300x120.png 300w,https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34-768x308.png 768w,https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34.png 1007w,https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34-300x120.png 300w,https://lala.im/wp-content/uploads/2023/10/lala.im_2023-10-02_14-03-34-768x308.png 768w" sizes="(max-width: 1007px) 100vw, 1007px" referrerpolicy="no-referrer" loading="lazy"></a></p>
+<p>&#33267;&#27492;&#65292;juicity&#26381;&#21153;&#31471;&#37197;&#32622;&#23436;&#25104;&#12290;&#25509;&#19979;&#26469;&#26159;&#23458;&#25143;&#31471;&#30340;&#37197;&#32622;&#12290;</p>
+<p>&#22312;&#36825;&#37324;&#19979;&#36733;&#23545;&#24212;&#31995;&#32479;&#30340;&#21387;&#32553;&#21253;&#65306;</p>
+<p>https://github.com/juicity/juicity/releases</p>
+<p>&#20363;&#22914;&#25105;&#20351;&#29992;Windows X64&#21017;&#19979;&#36733;&#65306;</p>
+<p>https://github.com/juicity/juicity/releases/download/v0.3.0/juicity-windows-x86_64.zip</p>
+<p>&#35299;&#21387;&#21387;&#32553;&#21253;&#37324;&#38754;&#30340;&#25991;&#20214;&#21040;&#19968;&#20010;&#25991;&#20214;&#22841;&#20869;&#12290;</p>
+<p>&#22312;&#21516;&#19968;&#20010;&#25991;&#20214;&#22841;&#20869;&#26032;&#24314;&#19968;&#20010;&#23458;&#25143;&#31471;&#37197;&#32622;&#25991;&#20214;&#65292;&#20363;&#22914;client.json&#65292;&#20889;&#20837;&#22914;&#19979;&#37197;&#32622;&#65306;</p>
+<pre>{
+    "listen": ":1080",
+    "server": "server ip:23182", // server ip&#20462;&#25913;&#20026;&#20320;&#30340;&#26381;&#21153;&#22120;IP
+    "uuid": "5075556a-13df-4d6a-aa14-4747040bb7e5", // &#23545;&#24212;&#26381;&#21153;&#31471;&#30340;UUID
+    "password": "password", // &#23545;&#24212;&#26381;&#21153;&#31471;&#30340;&#23494;&#30721;
+    "sni": "juicity.example.com", // &#30003;&#35831;&#35777;&#20070;&#26102;&#20351;&#29992;&#30340;&#22495;&#21517;
+    "allow_insecure": false,
+    "congestion_control": "bbr",
+    "log_level": "info"
+}</pre>
+<p>&#25171;&#24320;PowerShell&#36816;&#34892;juicity&#23458;&#25143;&#31471;&#65306;</p>
+<pre>./juicity-client.exe run -c client.json</pre>
+<p>&#29616;&#22312;&#24050;&#32463;&#21487;&#29992;&#20102;&#65292;juicity&#22312;1080&#31471;&#21475;&#36215;&#20102;&#19968;&#20010;HTTP/Socks5&#26381;&#21153;&#65292;&#23558;&#38656;&#35201;&#20351;&#29992;&#20195;&#29702;&#30340;&#31243;&#24207;&#37197;&#32622;&#20351;&#29992;&#36825;&#20010;&#26381;&#21153;&#21363;&#21487;&#12290;</p>
+<p>[&#21487;&#36873;]&#37197;&#32622;sing-box&#20351;&#29992;juicity&#65292;&#23454;&#29616;&#20998;&#27969;&#12289;TUN&#36879;&#26126;&#20195;&#29702;&#31561;&#39640;&#32423;&#21151;&#33021;&#12290;&#19979;&#38754;&#26159;&#19968;&#20010;sing-box&#30340;&#31034;&#20363;&#37197;&#32622;&#65306;</p>
+<pre>{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "cloudflare",
+        "address": "https://1.1.1.1/dns-query"
+      },
+      {
+        "tag": "dnspod",
+        "address": "https://1.12.12.12/dns-query",
+        "detour": "direct"
+      },
+      {
+        "tag": "block",
+        "address": "rcode://success"
+      }
+    ],
+    "rules": [
+      {
+        "geosite": "cn",
+        "server": "dnspod"
+      },
+      {
+        "geosite": "category-ads-all",
+        "server": "block",
+        "disable_cache": true
+      }
+    ]
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "singbox-tun",
+      "inet4_address": "172.20.0.1/30",
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "system",
+      "sniff": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-out",
+      "server": "127.0.0.1",
+      "server_port": 1080,
+      "version": "5"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "dns"
+      },
+      {
+        "geosite": "cn",
+        "geoip": [
+          "cn",
+          "private"
+        ],
+        "outbound": "direct"
+      },
+      {
+      	"process_name": "juicity-client.exe",
+      	"outbound": "direct"
+      },
+      {
+        "geosite": "category-ads-all",
+        "outbound": "block"
+      }
+    ],
+    "auto_detect_interface": true
+  }
+}</pre>
+<p>&#29992;&#31649;&#29702;&#21592;&#26435;&#38480;&#25171;&#24320;PowerShell&#36816;&#34892;sing-box&#65306;</p>
+<pre>./sing-box.exe run -c juicity-tun.json</pre></body></html>
