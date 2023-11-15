@@ -1,0 +1,286 @@
+<!doctype html><html><head><meta charset="utf-8"><title>sing-box TCP Brutal配置</title></head><body><p>TCP Brutal&#26159;Hysteria&#20013;&#30340;&#21516;&#21517;&#25317;&#22622;&#25511;&#21046;&#31639;&#27861;&#31227;&#26893;&#21040;TCP&#30340;&#29256;&#26412;&#65292;sing-box&#29575;&#20808;&#20570;&#20102;&#25903;&#25345;&#12290;</p>
+<p>&#26356;&#22810;&#35814;&#32454;&#30340;&#20171;&#32461;&#35831;&#31227;&#27493;&#39033;&#30446;&#39029;&#38754;&#26597;&#30475;&#65306;</p>
+<p>https://github.com/apernet/tcp-brutal/blob/master/README.zh.md<br>
+https://sing-box.sagernet.org/configuration/shared/tcp-brutal/</p>
+<p>&#21069;&#25552;&#26465;&#20214;&#65306;&#38656;&#35201;Linux&#20869;&#26680;&#29256;&#26412;5.8&#25110;&#26356;&#39640;&#65292;Debian11-12&#40664;&#35748;&#20869;&#26680;&#37117;&#26159;&#28385;&#36275;&#30340;&#12290;&#36825;&#37324;&#25105;&#29992;Debian11&#27979;&#35797;&#12290;</p>
+<p>&#39318;&#20808;&#32534;&#35793;Brutal&#30340;Linux&#20869;&#26680;&#27169;&#22359;&#65292;&#36825;&#37324;&#25105;&#36873;&#25321;&#30452;&#25509;&#25171;&#21253;&#25104;deb&#65292;&#36825;&#26679;&#24324;&#19968;&#27425;&#21518;&#65292;&#20854;&#20182;&#30340;&#26426;&#22120;&#23601;&#21487;&#20197;&#30452;&#25509;&#29992;deb&#23433;&#35013;&#20102;&#65292;&#26041;&#20415;&#19981;&#23569;&#12290;</p>
+<p>&#23433;&#35013;&#20381;&#36182;&#65306;</p>
+<pre>apt -y update
+apt -y install build-essential linux-headers-$(uname -r) dkms dh-make git</pre>
+<p>&#33719;&#21462;&#39033;&#30446;&#20195;&#30721;&#12289;&#21019;&#24314;dkms&#21387;&#32553;&#21253;&#65306;</p>
+<pre>git clone https://github.com/apernet/tcp-brutal.git
+cd tcp-brutal
+make dkms-tarball</pre>
+<p>&#30475;&#19968;&#19979;dkms.conf&#25991;&#20214;&#30340;&#20869;&#23481;&#65306;</p>
+<pre>cat dkms.conf</pre>
+<p>&#31867;&#20284;&#65306;</p>
+<pre>PACKAGE_NAME="tcp-brutal"
+PACKAGE_VERSION="1.0.0.r7.g845241d"
+...</pre>
+<p>&#26681;&#25454;&#26597;&#30475;&#21040;&#30340;PACKAGE_NAME&#21644;PACKAGE_VERSION&#21019;&#24314;&#30456;&#24212;&#30340;&#30446;&#24405;&#65306;</p>
+<pre>mkdir -p /usr/src/tcp-brutal-1.0.0.r7.g845241d</pre>
+<p>&#25226;&#21387;&#32553;&#21253;&#25991;&#20214;&#35299;&#21387;&#21040;&#30456;&#24212;&#30340;&#30446;&#24405;</p>
+<pre>tar -xzf dkms.tar.gz --strip-components=2 -C /usr/src/tcp-brutal-1.0.0.r7.g845241d</pre>
+<p>&#23558;&#21253;&#32435;&#20837;dkms&#31649;&#29702;&#12289;&#26500;&#24314;deb&#21253;&#12289;&#23433;&#35013;deb&#21253;&#65306;</p>
+<pre>cd /usr/src/tcp-brutal-1.0.0.r7.g845241d
+dkms add -m tcp-brutal -v 1.0.0.r7.g845241d
+dkms mkdeb
+dpkg -i tcp-brutal-dkms_1.0.0.r7.g845241d_amd64.deb</pre>
+<p>&#26597;&#30475;&#29366;&#24577;&#65292;&#22914;&#26377;&#31867;&#20284;&#22238;&#26174;&#35828;&#26126;&#19968;&#20999;&#27491;&#24120;&#65306;</p>
+<pre>root@imlala:~# dkms status
+tcp-brutal, 1.0.0.r7.g845241d, 5.10.0-26-amd64, x86_64: installed</pre>
+<p>[&#22791;&#27880;1]</p>
+<p>&#22914;&#26524;&#19981;&#26500;&#24314;deb&#21253;&#65292;&#21487;&#20197;&#22312;&#26412;&#26426;&#25191;&#34892;&#22914;&#19979;&#21629;&#20196;&#30452;&#25509;&#23433;&#35013;brutal&#20869;&#26680;&#27169;&#22359;&#65306;</p>
+<pre>dkms install -m tcp-brutal -v 1.0.0.r7.g845241d</pre>
+<p>[&#22791;&#27880;2]</p>
+<p>&#22914;&#26524;&#26500;&#24314;&#20102;deb&#21253;&#65292;&#21518;&#32493;&#22312;&#20854;&#20182;&#26426;&#22120;&#19978;&#23433;&#35013;brutal&#20869;&#26680;&#27169;&#22359;&#30340;&#35805;&#23601;&#24456;&#26041;&#20415;&#20102;&#12290;&#20808;&#25226;deb&#21253;&#20256;&#21040;&#23545;&#24212;&#30340;&#26426;&#22120;&#65306;</p>
+<pre>scp tcp-brutal-dkms_1.0.0.r7.g845241d_amd64.deb root@1.2.3.4:/opt</pre>
+<p>&#28982;&#21518;&#25191;&#34892;&#22914;&#19979;&#21629;&#20196;&#21363;&#21487;&#65306;</p>
+<pre>cd /opt
+dpkg -i tcp-brutal-dkms_1.0.0.r7.g845241d_amd64.deb
+apt install -f
+dkms status</pre>
+<p>&#29616;&#22312;&#25105;&#20204;&#36824;&#38656;&#35201;&#21152;&#36733;brutal&#27169;&#22359;&#65306;</p>
+<pre>modprobe brutal</pre>
+<p>&#26816;&#26597;&#27169;&#22359;&#26159;&#21542;&#21152;&#36733;&#25104;&#21151;&#65292;&#22914;&#26377;&#31867;&#20284;&#22914;&#19979;&#22238;&#26174;&#35828;&#26126;&#27491;&#24120;&#65306;</p>
+<pre>root@imlala:~# lsmod | grep brutal
+brutal                 20480  0</pre>
+<p>&#23558;brutal&#27169;&#22359;&#35774;&#32622;&#20026;&#24320;&#26426;&#33258;&#21160;&#21152;&#36733;&#65306;</p>
+<pre>echo "brutal" &gt; /etc/modules-load.d/brutal.conf</pre>
+<p>&#33267;&#27492;brutal&#20869;&#26680;&#27169;&#22359;&#30340;&#37197;&#32622;&#23601;&#23436;&#25104;&#20102;&#12290;</p>
+<p>&#29616;&#22312;&#25105;&#20204;&#35201;&#32534;&#35793;&#23433;&#35013;&#20010;sing-box&#30340;beta&#29256;&#26412;&#65292;&#20808;&#23433;&#35013;&#20381;&#36182;&#65306;</p>
+<pre>apt -y install curl build-essential libssl-dev zlib1g-dev gcc-mingw-w64</pre>
+<p>&#23433;&#35013;go&#65306;</p>
+<pre>curl -L https://go.dev/dl/go1.21.4.linux-amd64.tar.gz -o go1.21.4.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' &gt; /etc/profile.d/golang.sh
+source /etc/profile.d/golang.sh</pre>
+<p>&#32534;&#35793;&#30340;&#26102;&#20505;&#21487;&#20197;&#33258;&#24049;&#28155;&#21152;&#21442;&#25968;&#26469;&#25903;&#25345;&#26356;&#22810;&#30340;&#21151;&#33021;&#65306;</p>
+<p>https://sing-box.sagernet.org/installation/build-from-source/#build-tags</p>
+<p>&#36825;&#37324;&#25105;&#38656;&#35201;&#29992;&#21040;reality&#21644;utls&#25152;&#20197;&#23601;&#21152;&#20102;&#36825;&#20004;&#20010;&#12290;</p>
+<p>&#32534;&#35793;linux&#24179;&#21488;&#30340;&#20108;&#36827;&#21046;&#25991;&#20214;&#65306;</p>
+<pre>go install -v -tags \
+with_reality_server,\
+with_utls \
+github.com/sagernet/sing-box/cmd/sing-box@v1.7.0-beta.2</pre>
+<p>&#32534;&#35793;windows&#24179;&#21488;&#30340;&#20108;&#36827;&#21046;&#25991;&#20214;&#65306;</p>
+<pre>env GOOS=windows GOARCH=amd64 CGO_ENABLED=0 CC=x86_64-w64-mingw32-gcc \
+go install -v -tags \
+with_reality_server,\
+with_utls \
+github.com/sagernet/sing-box/cmd/sing-box@v1.7.0-beta.2</pre>
+<p>&#22797;&#21046;&#32534;&#35793;&#22909;&#30340;&#25991;&#20214;&#65306;</p>
+<pre>cp $(go env GOPATH)/bin/sing-box /usr/local/bin/</pre>
+<p>&#26032;&#24314;sing-box&#38656;&#35201;&#29992;&#21040;&#30340;&#30446;&#24405;&#65306;</p>
+<pre>mkdir -p /usr/local/etc/sing-box</pre>
+<p>&#26032;&#24314;systemd&#26381;&#21153;&#65306;</p>
+<pre>systemctl edit --full --force sing-box.service</pre>
+<p>&#20889;&#20837;&#22914;&#19979;&#37197;&#32622;&#65306;</p>
+<pre>[Unit]
+Description=sing-box service
+Documentation=https://sing-box.sagernet.org
+After=network.target nss-lookup.target
+
+[Service]
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+ExecStart=/usr/local/bin/sing-box run -c /usr/local/etc/sing-box/config.json
+Restart=on-failure
+RestartPreventExitStatus=23
+LimitNOFILE=infinity
+
+[Install]
+WantedBy=multi-user.target</pre>
+<p>&#26032;&#24314;sing-box&#30340;&#37197;&#32622;&#25991;&#20214;&#65306;</p>
+<pre>nano /usr/local/etc/sing-box/config.json</pre>
+<p>&#36825;&#37324;&#25105;&#37197;&#32622;&#19968;&#20010;vless-reality&#33410;&#28857;&#65306;</p>
+<pre>{
+  "log": {
+    "level": "info"
+  },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-in",
+      "listen": "0.0.0.0",
+      "listen_port": 443,
+      "users": [
+        {
+          "name": "imlala",
+          "uuid": "219c8c62-430a-439a-a6f6-d8f6a2a225a2",
+          "flow": ""
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "go.dev",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "go.dev",
+            "server_port": 443
+          },
+          "private_key": "mPVhErJjoa-hx7K8TAzVR_hiKM3UYuuTQEoECcSqNFE",
+          "short_id": [
+            "9534dcf8c8d0c43f"
+          ]
+        }
+      },
+      "multiplex": {
+        "enabled": true,
+        "padding": true,
+        "brutal": {
+          "enabled": true,
+          "up_mbps": 300,
+          "down_mbps": 300
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ]
+}</pre>
+<p>[&#22791;&#27880;1]</p>
+<p>&#35831;&#27880;&#24847;&#36825;&#22871;&#37197;&#32622;&#19981;&#25903;&#25345;xtls-rprx-vision&#65292;&#25152;&#20197;flow&#38656;&#35201;&#30041;&#31354;&#12290;</p>
+<p>[&#22791;&#27880;2]</p>
+<pre>sing-box generate uuid // &#29983;&#25104;uuid
+sing-box generate reality-keypair // &#29983;&#25104;private_key&#12289;public_key
+sing-box generate rand 8 --hex // &#29983;&#25104;short_id</pre>
+<p>&#21551;&#21160;sing-box&#24182;&#35774;&#32622;&#24320;&#26426;&#33258;&#21551;&#65306;</p>
+<pre>systemctl enable --now sing-box</pre>
+<p>&#23458;&#25143;&#31471;&#37197;&#32622;&#65292;&#36825;&#37324;&#25105;&#32473;&#20986;&#19968;&#20010;&#33258;&#24049;&#30446;&#21069;&#22312;&#29992;&#30340;&#65292;tun&#27169;&#24335;&#65306;</p>
+<pre>{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "cloudflare",
+        "address": "https://1.1.1.1/dns-query"
+      },
+      {
+        "tag": "dnspod",
+        "address": "https://1.12.12.12/dns-query",
+        "detour": "direct"
+      },
+      {
+        "tag": "block",
+        "address": "rcode://success"
+      }
+    ],
+    "rules": [
+      {
+        "geosite": "category-ads-all",
+        "server": "block",
+        "disable_cache": true
+      },
+      {
+      	"outbound": "any",
+      	"server": "dnspod"
+      },
+      {
+        "geosite": "cn",
+        "server": "dnspod"
+      }
+    ],
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "tun0",
+      "inet4_address": "172.28.0.1/30",
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "system",
+      "sniff": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-out",
+      "server": "1.2.3.4",
+      "server_port": 443,
+      "uuid": "219c8c62-430a-439a-a6f6-d8f6a2a225a2",
+      "flow": "",
+      "tls": {
+        "enabled": true,
+        "server_name": "go.dev",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+         },
+        "reality": {
+          "enabled": true,
+          "public_key": "2Gga7qZ8dA8agbF2lAnojBC_Nr90mxys_yMaJarty3A",
+          "short_id": "9534dcf8c8d0c43f"
+        }
+      },
+      "packet_encoding": "xudp",
+      "multiplex": {
+      	"enabled": true,
+      	"protocol": "h2mux",
+        "max_streams": 10,
+      	"padding": true,
+      	"brutal":{
+      	  "enabled": true,
+      	  "up_mbps": 30,
+      	  "down_mbps": 1000
+      	}
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns"
+    }
+  ],
+  "route": {
+    "geoip": {
+      "download_url": "https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip.db",
+      "download_detour": "vless-out" 
+    },
+    "geosite": {
+      "download_url": "https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite.db",
+      "download_detour": "vless-out"
+    },
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "dns"
+      },
+      {
+        "geosite": "cn",
+        "geoip": [
+          "cn",
+          "private"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "geosite": "category-ads-all",
+        "outbound": "block"
+      }
+    ],
+    "auto_detect_interface": true
+  }
+}</pre>
+<p>[&#22791;&#27880;1]</p>
+<p>tun&#27169;&#24335;&#27880;&#24847;windows&#38450;&#28779;&#22681;&#25318;&#25130;&#65292;&#33258;&#24049;&#25163;&#21160;&#20801;&#35768;&#19968;&#19979;&#65306;</p>
+<p><a href="https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32.png" title="" rel="noopener noreferrer" target="_blank"><img src="https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32.png" alt="" srcset="https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32.png 616w,https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32-300x222.png 300w,https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32.png 616w,https://lala.im/wp-content/uploads/2023/11/lala.im_2023-11-15_16-46-32-300x222.png 300w" sizes="(max-width: 616px) 100vw, 616px" referrerpolicy="no-referrer" loading="lazy"></a></p>
+<p>&#36825;&#26679;&#19968;&#27874;&#25805;&#20316;&#19979;&#26469;&#65292;&#21487;&#20197;&#35828;&#22522;&#26412;&#19978;&#21482;&#35201;&#19981;&#28041;&#21450;&#21040;grpc&#21644;http2&#30340;&#21327;&#35758;&#29616;&#22312;&#37117;&#21487;&#20197;&#29992;&#19978;brutal&#20102;&#65292;&#36825;&#23601;&#24456;&#29275;&#36924;&#20102;&#12290;&#12290;&#12290;</p></body></html>
